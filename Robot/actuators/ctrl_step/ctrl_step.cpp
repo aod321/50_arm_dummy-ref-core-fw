@@ -281,6 +281,19 @@ void CtrlStepMotor::UpdateAngleCallback(float _pos, bool _isFinished)
     angle = inverseDirection ? -tmp : tmp;
 }
 
+void CtrlStepMotor::UpdateCurrent()
+{
+    uint8_t mode = 0x21;
+    txHeader.StdId = nodeID << 7 | mode;
+
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+}
+
+void CtrlStepMotor::UpdateCurrentCallback(float _current, bool _isFinished) 
+{
+    state = _isFinished ? FINISH : RUNNING;
+    current = _current;
+}
 
 void CtrlStepMotor::SetDceKp(int32_t _val)
 {
@@ -333,6 +346,51 @@ void CtrlStepMotor::SetDceKd(int32_t _val)
     for (int i = 0; i < 4; i++)
         canBuf[i] = *(b + i);
     canBuf[4] = 1; // Need save to EEPROM or not
+
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+}
+
+
+void CtrlStepMotor::SetDragAssistGain(int32_t _val)
+{
+    uint8_t mode = 0x1C;
+    txHeader.StdId = nodeID << 7 | mode;
+
+    auto* b = (unsigned char*) &_val;
+    for (int i = 0; i < 4; i++)
+        canBuf[i] = *(b + i);
+    canBuf[4] = 1; // Need save to EEPROM or not
+
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+}
+
+void CtrlStepMotor::SetDragDampingGain(int32_t _val) 
+{
+    uint8_t mode = 0x1D;
+    txHeader.StdId = nodeID << 7 | mode;
+
+    auto* b = (unsigned char*) &_val;
+    for (int i = 0; i < 4; i++)
+        canBuf[i] = *(b + i);
+    canBuf[4] = 1; // Need save to EEPROM or not
+
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+}
+
+void CtrlStepMotor::SetDragEnable(bool _enable)
+{
+    // TODO: state mangement to be implemented
+    // state = _enable ? FINISH : STOP;
+    state = RUNNING;
+
+    uint8_t mode = 0x08;
+    txHeader.StdId = nodeID << 7 | mode;
+
+    // Int to Bytes
+    uint32_t val = _enable ? 1 : 0;
+    auto* b = (unsigned char*) &val;
+    for (int i = 0; i < 4; i++)
+        canBuf[i] = *(b + i);
 
     CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
 }

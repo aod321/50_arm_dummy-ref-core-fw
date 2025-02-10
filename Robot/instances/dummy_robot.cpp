@@ -22,14 +22,15 @@ DummyRobot::DummyRobot(CAN_HandleTypeDef* _hcan) :
 {
     motorJ[ALL] = new CtrlStepMotor(_hcan, 0, false, 1, -180, 180);
     motorJ[1] = new CtrlStepMotor(_hcan, 1, true, 30, -170, 170);
-    motorJ[2] = new CtrlStepMotor(_hcan, 2, false, 30, -73, 90);
-    motorJ[3] = new CtrlStepMotor(_hcan, 3, true, 30, 35, 180);
-    motorJ[4] = new CtrlStepMotor(_hcan, 4, false, 24, -180, 180);
-    motorJ[5] = new CtrlStepMotor(_hcan, 5, true, 30, -120, 120);
-    motorJ[6] = new CtrlStepMotor(_hcan, 6, true, 50, -720, 720);
+    motorJ[2] = new CtrlStepMotor(_hcan, 2, false, 30, -75, 90);
+    motorJ[3] = new CtrlStepMotor(_hcan, 3, false, 30, 0, 180);
+    motorJ[4] = new CtrlStepMotor(_hcan, 4, true, 30, -180, 180);
+    motorJ[5] = new CtrlStepMotor(_hcan, 5, true, 30, -100, 120);
+    motorJ[6] = new CtrlStepMotor(_hcan, 6, true, 30, -720, 720);
     hand = new DummyHand(_hcan, 7);
 
-    dof6Solver = new DOF6Kinematic(0.109f, 0.035f, 0.146f, 0.115f, 0.052f, 0.072f);
+    // dof6Solver = new DOF6Kinematic(0.109f, 0.035f, 0.146f, 0.115f, 0.052f, 0.072f);
+    dof6Solver = new DOF6Kinematic(0.1265f, 0.035f, 0.146f, 0.117f, 0.052f, 0.0755f);
 }
 
 
@@ -162,6 +163,24 @@ void DummyRobot::UpdateJointAngles()
     motorJ[ALL]->UpdateAngle();
 }
 
+
+void DummyRobot::UpdateJointCurrents()
+{
+    motorJ[ALL]->UpdateCurrent();
+}
+
+void DummyRobot::UpdateJointCurrentsCallback()
+{
+    for (int i = 1; i <= 6; i++)
+    {
+        currentJointsCurrents.a[i - 1] = motorJ[i]->current;
+
+        if (motorJ[i]->state == CtrlStepMotor::FINISH)
+            jointsStateFlag |= (1 << i);
+        else
+            jointsStateFlag &= ~(1 << i);
+    }
+}
 
 void DummyRobot::UpdateJointAnglesCallback()
 {
@@ -565,3 +584,25 @@ void DummyRobot::TuningHelper::SetFreqAndAmp(float _freq, float _amp)
     frequency = _freq;
     amplitude = _amp;
 }
+
+
+void DummyRobot::EEFPoseHelper::UpdatePose6D()
+{
+    context->UpdateJointPose6D();
+    x = context->currentPose6D.X;
+    y = context->currentPose6D.Y;
+    z = context->currentPose6D.Z;
+    a = context->currentPose6D.A;
+    b = context->currentPose6D.B;
+    c = context->currentPose6D.C;
+}
+
+
+
+
+void DummyRobot::SetDragEnable(bool _enable)
+{
+    motorJ[ALL]->SetDragEnable(_enable);
+    isDragEnabled = _enable;
+}
+

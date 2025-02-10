@@ -29,6 +29,8 @@ public:
     uint8_t reduction;
     State state = STOP;
 
+    float current = 0;
+
     void SetAngle(float _angle);
     void SetAngleWithVelocityLimit(float _angle, float _vel);
     // CAN Command
@@ -47,6 +49,8 @@ public:
     void SetDceKv(int32_t _val);
     void SetDceKi(int32_t _val);
     void SetDceKd(int32_t _val);
+    void SetDragAssistGain(int32_t _val);
+    void SetDragDampingGain(int32_t _val);
     void ApplyPositionAsHome();
     void SetEnableOnBoot(bool _enable);
     void SetEnableStallProtect(bool _enable);
@@ -57,15 +61,26 @@ public:
     void UpdateAngle();
     void UpdateAngleCallback(float _pos, bool _isFinished);
 
+    void UpdateCurrent();
+    void UpdateCurrentCallback(float _current, bool _isFinished);
+
+
+    void SetDragEnable(bool _enable);
+
 
     // Communication protocol definitions
+
     auto MakeProtocolDefinitions()
     {
         return make_protocol_member_list(
             make_protocol_ro_property("angle", &angle),
+
+            make_protocol_ro_property("current", &current),
+
             make_protocol_function("reboot", *this, &CtrlStepMotor::Reboot),
             make_protocol_function("get_temperature", *this, &CtrlStepMotor::GetTemp),
             make_protocol_function("set_enable_temperature", *this, &CtrlStepMotor::SetEnableTemp, "enable"),
+
             make_protocol_function("erase_configs", *this, &CtrlStepMotor::EraseConfigs),
             make_protocol_function("set_enable", *this, &CtrlStepMotor::SetEnable, "enable"),
             make_protocol_function("set_position_with_time", *this,
@@ -86,7 +101,11 @@ public:
             make_protocol_function("set_dce_kd", *this, &CtrlStepMotor::SetDceKd, "vel"),
             make_protocol_function("set_enable_stall_protect", *this, &CtrlStepMotor::SetEnableStallProtect,
                                    "enable"),
-            make_protocol_function("update_angle", *this, &CtrlStepMotor::UpdateAngle)
+            make_protocol_function("update_angle", *this, &CtrlStepMotor::UpdateAngle),
+            make_protocol_function("update_current", *this, &CtrlStepMotor::UpdateCurrent),
+            make_protocol_function("set_drag_enable", *this, &CtrlStepMotor::SetDragEnable, "enable"),
+            make_protocol_function("set_drag_assist_gain", *this, &CtrlStepMotor::SetDragAssistGain, "gain"),
+            make_protocol_function("set_drag_damping_gain", *this, &CtrlStepMotor::SetDragDampingGain, "gain")
         );
     }
 

@@ -68,6 +68,31 @@ public:
         COMMAND_MOTOR_TUNING
     };
 
+    class EEFPoseHelper
+    {
+    public:
+        float x=0,y=0,z=0,a=0,b=0,c=0;
+        explicit EEFPoseHelper(DummyRobot* _context): context(_context)
+        {
+        }
+        void UpdatePose6D();
+
+        auto MakeProtocolDefinitions() {
+            return make_protocol_member_list(
+                    make_protocol_ro_property("x", &x),
+                    make_protocol_ro_property("y", &y),
+                    make_protocol_ro_property("z", &z),
+                    make_protocol_ro_property("a", &a),
+                    make_protocol_ro_property("b", &b),
+                    make_protocol_ro_property("c", &c),
+                    make_protocol_function("update_pose_6D", *this,
+                                           &EEFPoseHelper::UpdatePose6D)
+            );
+        }
+    private:
+        DummyRobot* context;
+    };
+
 
     class TuningHelper
     {
@@ -101,6 +126,7 @@ public:
         float amplitude = 1;
     };
     TuningHelper tuningHelper = TuningHelper(this);
+    EEFPoseHelper eefPoseHelper = EEFPoseHelper(this);
 
 
     // This is the pose when power on.
@@ -112,6 +138,7 @@ public:
     const CommandMode DEFAULT_COMMAND_MODE = COMMAND_TARGET_POINT_INTERRUPTABLE;
 
 
+    DOF6Kinematic::Joint6D_t currentJointsCurrents = {0, 0, 0, 0, 0, 0};
     DOF6Kinematic::Joint6D_t currentJoints = REST_POSE;
     DOF6Kinematic::Joint6D_t targetJoints = REST_POSE;
     DOF6Kinematic::Joint6D_t initPose = REST_POSE;
@@ -120,6 +147,7 @@ public:
     CommandMode commandMode = DEFAULT_COMMAND_MODE;
     CtrlStepMotor* motorJ[7] = {nullptr};
     DummyHand* hand = {nullptr};
+
 
 
     void Init();
@@ -131,11 +159,16 @@ public:
     void UpdateJointAngles();
     void UpdateJointAnglesCallback();
     void UpdateJointPose6D();
+
+    void UpdateJointCurrents();
+    void UpdateJointCurrentsCallback();
+
     void Reboot();
     void SetEnable(bool _enable);
     void SetRGBEnable(bool _enable);
     bool GetRGBEnabled();
     void SetRGBMode(uint32_t mode);
+
     uint32_t GetRGBMode();
     void CalibrateHomeOffset();
     void Homing();
@@ -143,7 +176,9 @@ public:
     bool IsMoving();
     bool IsEnabled();
     void SetCommandMode(uint32_t _mode);
+    
 
+    void SetDragEnable(bool _enable);
 
     // Communication protocol definitions
     auto MakeProtocolDefinitions()
@@ -169,9 +204,13 @@ public:
             make_protocol_function("set_joint_speed", *this, &DummyRobot::SetJointSpeed, "speed"),
             make_protocol_function("set_joint_acc", *this, &DummyRobot::SetJointAcceleration, "acc"),
             make_protocol_function("set_command_mode", *this, &DummyRobot::SetCommandMode, "mode"),
-            make_protocol_object("tuning", tuningHelper.MakeProtocolDefinitions())
+            make_protocol_function("set_drag_enable", *this, &DummyRobot::SetDragEnable, "enable"),
+            make_protocol_object("tuning", tuningHelper.MakeProtocolDefinitions()),
+            make_protocol_object("eef_pose", eefPoseHelper.MakeProtocolDefinitions())
         );
     }
+
+
 
 
     class CommandHandler
@@ -207,6 +246,8 @@ private:
     bool isEnabled = false;
     bool isRGBEnabled = false;
     uint32_t rgbMode = 0;
+
+    bool isDragEnabled = false;
 };
 
 

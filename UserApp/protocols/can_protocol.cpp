@@ -25,6 +25,9 @@ void OnCanMessage(CAN_context* canCtx, CAN_RxHeaderTypeDef* rxHeader, uint8_t* d
         /*----------------------- ↓ Add Your CAN1 Packet Protocol Here ↓ ------------------------*/
         switch (cmd)
         {
+            case 0x21:
+                dummy.motorJ[id]->UpdateCurrentCallback(*(float*) (data), data[4]);
+                break;
             case 0x23:
                 dummy.motorJ[id]->UpdateAngleCallback(*(float*) (data), data[4]);
                 break;

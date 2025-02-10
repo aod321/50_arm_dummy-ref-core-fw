@@ -19,7 +19,7 @@ volatile bool endpointListValid = false;
 osThreadId_t commTaskHandle;
 const osThreadAttr_t commTask_attributes = {
     .name = "commTask",
-    .stack_size = 45000,
+    .stack_size = 51000,
     .priority = (osPriority_t) osPriorityNormal,
 };
 
