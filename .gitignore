@@ -1,0 +1,83 @@
+# Build directories
+build/
+cmake-build-*/
+Debug/
+Release/
+
+# IDE specific files (CLion/JetBrains)
+.idea/
+*.iml
+*.iws
+.idea_modules/
+
+# Compiled files
+*.o
+*.ko
+*.obj
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+
+# Dependency files
+*.d
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Generated files
+*.dep
+*.lst
+*.map
+*.sym
+
+# Backup files
+*~
+*.bak
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+*.launch
+*.jlink
+*.uvguix.*
+*.uvoptx
+*.uvprojx
+JLinkLog.txt
+JLinkSettings.ini
+
+# STM32CubeMX generated backup files
+*.bak
+*_backup
+
+# CMake temporary files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.tar.gz
