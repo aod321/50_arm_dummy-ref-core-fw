@@ -281,7 +281,25 @@ void CtrlStepMotor::UpdateAngleCallback(float _pos, bool _isFinished)
     angle = inverseDirection ? -tmp : tmp;
 }
 
+
+void CtrlStepMotor::UpdateVelocity()
+{
+    uint8_t mode = 0x22;
+    txHeader.StdId = nodeID << 7 | mode;
+
+
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+}
+
+void CtrlStepMotor::UpdateVelocityCallback(float _vel, bool _isFinished)
+{
+    state = _isFinished ? FINISH : RUNNING;
+    velocity = _vel;
+}
+
+
 void CtrlStepMotor::UpdateCurrent()
+
 {
     uint8_t mode = 0x21;
     txHeader.StdId = nodeID << 7 | mode;
@@ -380,8 +398,7 @@ void CtrlStepMotor::SetDragDampingGain(int32_t _val)
 void CtrlStepMotor::SetDragEnable(bool _enable)
 {
     // TODO: state mangement to be implemented
-    // state = _enable ? FINISH : STOP;
-    state = RUNNING;
+    state = _enable ? FINISH : STOP;
 
     uint8_t mode = 0x08;
     txHeader.StdId = nodeID << 7 | mode;

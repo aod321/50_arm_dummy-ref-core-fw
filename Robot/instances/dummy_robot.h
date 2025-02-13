@@ -138,10 +138,12 @@ public:
     const CommandMode DEFAULT_COMMAND_MODE = COMMAND_TARGET_POINT_INTERRUPTABLE;
 
 
+    DOF6Kinematic::Joint6D_t currentJointsVelocities = {0, 0, 0, 0, 0, 0};
     DOF6Kinematic::Joint6D_t currentJointsCurrents = {0, 0, 0, 0, 0, 0};
     DOF6Kinematic::Joint6D_t currentJoints = REST_POSE;
     DOF6Kinematic::Joint6D_t targetJoints = REST_POSE;
     DOF6Kinematic::Joint6D_t initPose = REST_POSE;
+
     DOF6Kinematic::Pose6D_t currentPose6D = {};
     volatile uint8_t jointsStateFlag = 0b00000000;
     CommandMode commandMode = DEFAULT_COMMAND_MODE;
@@ -162,6 +164,9 @@ public:
 
     void UpdateJointCurrents();
     void UpdateJointCurrentsCallback();
+
+    void UpdateJointVelocities();
+    void UpdateJointVelocitiesCallback();
 
     void Reboot();
     void SetEnable(bool _enable);

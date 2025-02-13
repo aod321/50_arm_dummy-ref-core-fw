@@ -45,7 +45,8 @@ void ThreadControlLoopFixUpdate(void* argument)
             // Just update Joint states
             dummy.UpdateJointAngles();
             dummy.UpdateJointPose6D();
-            dummy.UpdateJointCurrents();
+            dummy.UpdateJointVelocities();
+            // dummy.UpdateJointCurrents();
         }
     }
 }

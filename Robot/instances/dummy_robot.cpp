@@ -163,11 +163,29 @@ void DummyRobot::UpdateJointAngles()
     motorJ[ALL]->UpdateAngle();
 }
 
+void DummyRobot::UpdateJointVelocities()
+{
+    motorJ[ALL]->UpdateVelocity();
+}
+
+void DummyRobot::UpdateJointVelocitiesCallback()
+{
+    for (int i = 1; i <= 6; i++)
+    {
+        currentJointsVelocities.a[i - 1] = motorJ[i]->velocity;
+
+        if (motorJ[i]->state == CtrlStepMotor::FINISH)
+            jointsStateFlag |= (1 << i);
+        else
+            jointsStateFlag &= ~(1 << i);
+    }
+}
 
 void DummyRobot::UpdateJointCurrents()
 {
     motorJ[ALL]->UpdateCurrent();
 }
+
 
 void DummyRobot::UpdateJointCurrentsCallback()
 {

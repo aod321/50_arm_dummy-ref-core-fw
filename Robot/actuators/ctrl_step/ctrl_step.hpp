@@ -30,6 +30,7 @@ public:
     State state = STOP;
 
     float current = 0;
+    float velocity = 0;
 
     void SetAngle(float _angle);
     void SetAngleWithVelocityLimit(float _angle, float _vel);
@@ -64,6 +65,9 @@ public:
     void UpdateCurrent();
     void UpdateCurrentCallback(float _current, bool _isFinished);
 
+    void UpdateVelocity();
+    void UpdateVelocityCallback(float _vel, bool _isFinished);
+
 
     void SetDragEnable(bool _enable);
 
@@ -75,7 +79,8 @@ public:
         return make_protocol_member_list(
             make_protocol_ro_property("angle", &angle),
 
-            make_protocol_ro_property("current", &current),
+            // make_protocol_ro_property("current", &current),
+            make_protocol_ro_property("velocity", &velocity),
 
             make_protocol_function("reboot", *this, &CtrlStepMotor::Reboot),
             make_protocol_function("get_temperature", *this, &CtrlStepMotor::GetTemp),
@@ -102,9 +107,11 @@ public:
             make_protocol_function("set_enable_stall_protect", *this, &CtrlStepMotor::SetEnableStallProtect,
                                    "enable"),
             make_protocol_function("update_angle", *this, &CtrlStepMotor::UpdateAngle),
-            make_protocol_function("update_current", *this, &CtrlStepMotor::UpdateCurrent),
+            // make_protocol_function("update_current", *this, &CtrlStepMotor::UpdateCurrent),
+            make_protocol_function("update_velocity", *this, &CtrlStepMotor::UpdateVelocity),
             make_protocol_function("set_drag_enable", *this, &CtrlStepMotor::SetDragEnable, "enable"),
             make_protocol_function("set_drag_assist_gain", *this, &CtrlStepMotor::SetDragAssistGain, "gain"),
+
             make_protocol_function("set_drag_damping_gain", *this, &CtrlStepMotor::SetDragDampingGain, "gain")
         );
     }
