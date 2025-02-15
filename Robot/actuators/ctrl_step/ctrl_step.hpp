@@ -106,13 +106,7 @@ public:
             make_protocol_function("set_dce_kd", *this, &CtrlStepMotor::SetDceKd, "vel"),
             make_protocol_function("set_enable_stall_protect", *this, &CtrlStepMotor::SetEnableStallProtect,
                                    "enable"),
-            make_protocol_function("update_angle", *this, &CtrlStepMotor::UpdateAngle),
-            // make_protocol_function("update_current", *this, &CtrlStepMotor::UpdateCurrent),
-            make_protocol_function("update_velocity", *this, &CtrlStepMotor::UpdateVelocity),
-            make_protocol_function("set_drag_enable", *this, &CtrlStepMotor::SetDragEnable, "enable"),
-            make_protocol_function("set_drag_assist_gain", *this, &CtrlStepMotor::SetDragAssistGain, "gain"),
-
-            make_protocol_function("set_drag_damping_gain", *this, &CtrlStepMotor::SetDragDampingGain, "gain")
+            make_protocol_function("update_angle", *this, &CtrlStepMotor::UpdateAngle)
         );
     }
 
