@@ -183,7 +183,6 @@ public:
     void SetCommandMode(uint32_t _mode);
     
 
-    void SetDragEnable(bool _enable);
 
     // Communication protocol definitions
     auto MakeProtocolDefinitions()
@@ -209,7 +208,6 @@ public:
             make_protocol_function("set_joint_speed", *this, &DummyRobot::SetJointSpeed, "speed"),
             make_protocol_function("set_joint_acc", *this, &DummyRobot::SetJointAcceleration, "acc"),
             make_protocol_function("set_command_mode", *this, &DummyRobot::SetCommandMode, "mode"),
-            make_protocol_function("set_drag_enable", *this, &DummyRobot::SetDragEnable, "enable"),
             make_protocol_object("tuning", tuningHelper.MakeProtocolDefinitions()),
             make_protocol_object("eef_pose", eefPoseHelper.MakeProtocolDefinitions())
         );

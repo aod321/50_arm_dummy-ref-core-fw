@@ -69,7 +69,6 @@ public:
     void UpdateVelocityCallback(float _vel, bool _isFinished);
 
 
-    void SetDragEnable(bool _enable);
 
 
     // Communication protocol definitions

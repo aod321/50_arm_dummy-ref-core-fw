@@ -394,20 +394,3 @@ void CtrlStepMotor::SetDragDampingGain(int32_t _val)
 
     CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
 }
-
-void CtrlStepMotor::SetDragEnable(bool _enable)
-{
-    // TODO: state mangement to be implemented
-    state = _enable ? FINISH : STOP;
-
-    uint8_t mode = 0x08;
-    txHeader.StdId = nodeID << 7 | mode;
-
-    // Int to Bytes
-    uint32_t val = _enable ? 1 : 0;
-    auto* b = (unsigned char*) &val;
-    for (int i = 0; i < 4; i++)
-        canBuf[i] = *(b + i);
-
-    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
-}

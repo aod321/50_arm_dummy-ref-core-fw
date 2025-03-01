@@ -173,11 +173,6 @@ void DummyRobot::UpdateJointVelocitiesCallback()
     for (int i = 1; i <= 6; i++)
     {
         currentJointsVelocities.a[i - 1] = motorJ[i]->velocity;
-
-        if (motorJ[i]->state == CtrlStepMotor::FINISH)
-            jointsStateFlag |= (1 << i);
-        else
-            jointsStateFlag &= ~(1 << i);
     }
 }
 
@@ -192,11 +187,6 @@ void DummyRobot::UpdateJointCurrentsCallback()
     for (int i = 1; i <= 6; i++)
     {
         currentJointsCurrents.a[i - 1] = motorJ[i]->current;
-
-        if (motorJ[i]->state == CtrlStepMotor::FINISH)
-            jointsStateFlag |= (1 << i);
-        else
-            jointsStateFlag &= ~(1 << i);
     }
 }
 
@@ -613,14 +603,5 @@ void DummyRobot::EEFPoseHelper::UpdatePose6D()
     a = context->currentPose6D.A;
     b = context->currentPose6D.B;
     c = context->currentPose6D.C;
-}
-
-
-
-
-void DummyRobot::SetDragEnable(bool _enable)
-{
-    motorJ[ALL]->SetDragEnable(_enable);
-    isDragEnabled = _enable;
 }
 
