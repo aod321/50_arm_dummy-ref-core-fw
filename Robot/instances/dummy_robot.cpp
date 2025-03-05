@@ -27,7 +27,7 @@ DummyRobot::DummyRobot(CAN_HandleTypeDef* _hcan) :
     motorJ[4] = new CtrlStepMotor(_hcan, 4, true, 30, -180, 180);
     motorJ[5] = new CtrlStepMotor(_hcan, 5, true, 30, -100, 120);
     motorJ[6] = new CtrlStepMotor(_hcan, 6, true, 30, -720, 720);
-    hand = new DummyHand(_hcan, 7);
+    hand = new DummyHand(_hcan, 0x601);
 
     // dof6Solver = new DOF6Kinematic(0.109f, 0.035f, 0.146f, 0.115f, 0.052f, 0.072f);
     dof6Solver = new DOF6Kinematic(0.1265f, 0.035f, 0.146f, 0.117f, 0.052f, 0.0755f);
@@ -357,8 +357,7 @@ void DummyRobot::SetCommandMode(uint32_t _mode)
 }
 
 
-DummyHand::DummyHand(CAN_HandleTypeDef* _hcan, uint8_t
-_id) :
+DummyHand::DummyHand(CAN_HandleTypeDef* _hcan, uint16_t _id) :
     nodeID(_id), hcan(_hcan)
 {
     txHeader =
@@ -372,48 +371,281 @@ _id) :
         };
 }
 
-
-void DummyHand::SetAngle(float _angle)
+/**
+ * @brief Save current parameters to non-volatile memory
+ * @return Whether the command was sent successfully
+ */
+void DummyHand::Save()
 {
-    if (_angle > 30)_angle = 30;
-    if (_angle < 0)_angle = 0;
+    // Set CAN frame ID
+    txHeader.StdId = nodeID;  // Use node ID (0x601)
+    
+    // Prepare data packet - Save parameters command
+    canBuf[0] = 0x2B;        // Command byte - Write to one register
+    canBuf[1] = 0x00;        // Register high byte
+    canBuf[2] = 0xA4;        // Register low byte - 0x00A4 indicates save parameters
+    canBuf[3] = 0x00;        // null
+    canBuf[4] = 0x00;        // High byte
+    canBuf[5] = 0x01;        // Low byte - 0x01 means execute save operation
+    canBuf[6] = 0x00;        // null
+    canBuf[7] = 0x00;        // null
 
-    uint8_t mode = 0x02;
-    txHeader.StdId = 7 << 7 | mode;
+    // Send CAN message
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+}
 
-    // Float to Bytes
-    auto* b = (unsigned char*) &_angle;
-    for (int i = 0; i < 4; i++)
-        canBuf[i] = *(b + i);
+void DummyHand::EnableCloseLoop()
+{
+  // Set CAN frame ID
+    txHeader.StdId = nodeID;  // Use node ID (0x601)
+    
+    // Prepare data packet - Enter closed-loop control command
+    canBuf[0] = 0x2B;        // Command byte - Write to one register
+    canBuf[1] = 0x00;        // Register high byte
+    canBuf[2] = 0xA2;        // Register low byte - 0x00A2 indicates closed-loop control
+    canBuf[3] = 0x00;        // null
+    canBuf[4] = 0x00;        // High byte
+    canBuf[5] = 0x01;        // Low byte - 0x01 means enter closed-loop state
+    canBuf[6] = 0x00;        // null
+    canBuf[7] = 0x00;        // null
 
     CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
 }
 
 
-void DummyHand::SetMaxCurrent(float _val)
+
+/**
+ * @brief Set motor torque (by setting current value)
+ * @param _current Current value in Amperes, typically in the range of 0-1A
+ */
+void DummyHand::SetTorque(float _current)
+{
+    // Limit current range to prevent motor damage
+    if (_current > 2.0f) _current = 2.0f; 
+    if (_current < 0.0f) _current = 0.0f;
+
+    // Scale by 100 as required by the CAN communication protocol
+    uint16_t scaled_current = static_cast<uint16_t>(_current * 100);
+    
+    // Set CAN frame ID
+    txHeader.StdId = nodeID;  // Use node ID (0x601)
+    
+    // Prepare data packet
+    canBuf[0] = 0x2B;        // Command byte - write to one register
+    canBuf[1] = 0x00;        // Register high byte
+    canBuf[2] = 0x20;        // Register low byte - 0x0020 indicates current setting
+    canBuf[3] = 0x00;        // null
+    
+    // Convert 16-bit current value to 2 bytes
+    canBuf[4] = (scaled_current >> 8) & 0xFF;  // High byte
+    canBuf[5] = scaled_current & 0xFF;         // Low byte
+    canBuf[6] = 0x00;        // null
+    canBuf[7] = 0x00;        // null
+
+    // Send CAN message
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+}
+
+/**
+ * Set the absolute position of the gripper
+ * @param _angle Absolute position angle value (degrees)
+ */
+void DummyHand::SetAngle(float _angle)
+{
+    // Check angle range, limit to reasonable range
+    if (_angle > maxAngle) _angle = maxAngle;
+    if (_angle < minAngle) _angle = minAngle;
+
+    // Multiply by 100 to amplify, as required by protocol
+    int32_t angle_value = (int32_t)(_angle * 100);
+    
+    // Set CAN frame ID
+    txHeader.StdId = nodeID;  // Use node ID
+    
+    // Prepare CAN data
+    canBuf[0] = 0x23;        // Command byte: write 2 registers
+    canBuf[1] = 0x00;        // Register high byte
+    canBuf[2] = 0x23;        // Register low byte: absolute position register
+    canBuf[3] = 0x00;        // null
+    
+    // Convert angle value to byte format (4 bytes, high byte first)
+    canBuf[4] = (angle_value >> 24) & 0xFF;  // Highest byte
+    canBuf[5] = (angle_value >> 16) & 0xFF;  // High byte
+    canBuf[6] = (angle_value >> 8) & 0xFF;   // Low byte
+    canBuf[7] = angle_value & 0xFF;         // Lowest byte
+
+    // Send CAN message
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+}
+
+/**
+ * Set the relative position of the gripper
+ * @param _angle Relative position angle value (degrees)
+ */
+void DummyHand::SetRelativePosition(float _angle)
+{
+    // Check angle range, apply appropriate limits
+    if (_angle > maxAngle) _angle = maxAngle;
+    if (_angle < minAngle) _angle = minAngle;
+
+    // Multiply by 100 to amplify, as required by protocol
+    int32_t angle_value = (int32_t)(_angle * 100);
+    
+    // Set CAN frame ID
+    txHeader.StdId = nodeID;  // Use node ID
+    
+    // Prepare CAN data
+    canBuf[0] = 0x23;        // Command byte: write 2 registers
+    canBuf[1] = 0x00;        // Register high byte
+    canBuf[2] = 0x25;        // Register low byte: relative position register
+    canBuf[3] = 0x00;        // null
+    
+    // Convert angle value to byte format (4 bytes, high byte first)
+    canBuf[4] = (angle_value >> 24) & 0xFF;  // Highest byte
+    canBuf[5] = (angle_value >> 16) & 0xFF;  // High byte
+    canBuf[6] = (angle_value >> 8) & 0xFF;   // Low byte
+    canBuf[7] = angle_value & 0xFF;         // Lowest byte
+
+    // Send CAN message
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+}
+
+
+void DummyHand::SetCurrentLimit(float _val)
 {
     if (_val > 1)_val = 1;
     if (_val < 0)_val = 0;
 
-    uint8_t mode = 0x01;
-    txHeader.StdId = 7 << 7 | mode;
-
-    // Float to Bytes
-    auto* b = (unsigned char*) &_val;
-    for (int i = 0; i < 4; i++)
-        canBuf[i] = *(b + i);
+    // Convert to current value (0-100) as per protocol
+    uint16_t current = static_cast<uint16_t>(_val * 100);
+    
+    // Set up CAN frame according to protocol
+    txHeader.StdId = nodeID;  // Standard ID: 0x601 (for node 1)
+    
+    // Prepare data according to protocol
+    canBuf[0] = 0x2B;        // Command byte
+    canBuf[1] = 0x00;        // Register high byte
+    canBuf[2] = 0x61;        // Register low byte
+    canBuf[3] = 0x00;        // null
+    canBuf[4] = (current >> 8) & 0xFF;  // Current high byte
+    canBuf[5] = current & 0xFF;         // Current low byte
+    canBuf[6] = 0x00;        // null
+    canBuf[7] = 0x00;        // null
 
     CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
 }
 
-
-void DummyHand::SetEnable(bool _enable)
+void DummyHand::SetMode(uint8_t _mode)
 {
-    if (_enable)
-        SetMaxCurrent(maxCurrent);
-    else
-        SetMaxCurrent(0);
+    if (_mode < 0) _mode = 0;
+    if (_mode > 4) _mode = 4;
+
+    // Set up CAN frame according to protocol
+    txHeader.StdId = nodeID;  // Standard ID: 0x601 (for node 1)
+    
+    // Prepare data according to protocol
+    canBuf[0] = 0x2B;        // Command byte
+    canBuf[1] = 0x00;        // Register high byte
+    canBuf[2] = 0x60;        // Register low byte
+    canBuf[3] = 0x00;        // null
+    canBuf[4] = 0x00;        // Mode high byte
+    canBuf[5] = _mode & 0xFF; // Mode low byte
+    canBuf[6] = 0x00;        // null
+    canBuf[7] = 0x00;        // null
+
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
 }
+
+void DummyHand::UpdateAngle()
+{
+    txHeader.StdId = nodeID;  // Using node ID (0x601)
+    
+    // Prepare data packet - Read real-time position command
+    canBuf[0] = 0x43;        // Command byte - Read 2 registers
+    canBuf[1] = 0x00;        // Register high byte
+    canBuf[2] = 0x08;        // Register low byte - 0x0008 represents real-time position
+    canBuf[3] = 0x00;        // null
+    canBuf[4] = 0x00;        // null
+    canBuf[5] = 0x00;        // null
+    canBuf[6] = 0x00;        // null
+    canBuf[7] = 0x00;        // null
+
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+    
+}
+
+
+uint8_t DummyHand::GetMode()
+{
+
+    txHeader.StdId = nodeID;  // Using node ID (0x601)
+    
+    // Prepare data packet - Read real-time position command
+    canBuf[0] = 0x4B;        // Command byte - Read 1 registers
+    canBuf[1] = 0x00;        // Register high byte
+    canBuf[2] = 0x60;        // Register low byte - Real-time mode register
+    canBuf[3] = 0x00;        // null
+    canBuf[4] = 0x00;        // null
+    canBuf[5] = 0x00;        // null
+    canBuf[6] = 0x00;        // null
+    canBuf[7] = 0x00;        // null
+
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+    return mode;
+}
+
+
+
+// Add angle callback handler function
+void DummyHand::UpdateAngleCallback(uint8_t* data)
+{
+    // Extract angle value from CAN data (4 bytes, int32_t format)
+    int32_t scaled_angle = (static_cast<int32_t>(data[4]) << 24) |
+                           (static_cast<int32_t>(data[5]) << 16) |
+                           (static_cast<int32_t>(data[6]) << 8) |
+                           static_cast<int32_t>(data[7]);
+    
+    // Convert scaled angle value back to actual angle (divide by 100)
+    currentAngle = static_cast<float>(scaled_angle) / 100.0f;
+}
+
+
+float DummyHand::GetAngle()
+{
+    txHeader.StdId = nodeID;  // Using node ID (0x601)
+    
+    // Prepare data packet - Read real-time position command
+    canBuf[0] = 0x4B;        // Command byte - Read 1 registers
+    canBuf[1] = 0x00;        // Register high byte
+    canBuf[2] = 0x60;        // Register low byte - Real-time mode register
+    canBuf[3] = 0x00;        // null
+    canBuf[4] = 0x00;        // null
+    canBuf[5] = 0x00;        // null
+    canBuf[6] = 0x00;        // null
+    canBuf[7] = 0x00;        // null
+
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+    return currentAngle;
+}
+
+float DummyHand::GetCurrentLimit()
+{
+    txHeader.StdId = nodeID;  // Using node ID (0x601)
+    
+    // Prepare data packet - Read real-time position command
+    canBuf[0] = 0x4B;        // Command byte - Read 1 registers
+    canBuf[1] = 0x00;        // Register high byte
+    canBuf[2] = 0x61;        // Register low byte - Real-time mode register
+    canBuf[3] = 0x00;        // null
+    canBuf[4] = 0x00;        // null
+    canBuf[5] = 0x00;        // null
+    canBuf[6] = 0x00;        // null
+    canBuf[7] = 0x00;        // null
+
+    CanSendMessage(get_can_ctx(hcan), canBuf, &txHeader);
+    return CurrentLimit;
+}
+
 
 
 uint32_t DummyRobot::CommandHandler::Push(const std::string &_cmd)

@@ -21,25 +21,48 @@
 class DummyHand
 {
 public:
-    uint8_t nodeID = 7;
-    float maxCurrent = 0.7;
+    uint16_t nodeID = 0x601;
+    float CurrentLimit = 0.27f;
+    float currentAngle = 0.0f;
+    // Control modes:
+    // 0: Torque mode
+    // 1: Velocity mode
+    // 2: Position trajectory mode
+    // 3: Position filter mode
+    // 4: Position direct mode
+    uint8_t mode = 0;
+
+    DummyHand(CAN_HandleTypeDef* _hcan, uint16_t _id);
 
 
-    DummyHand(CAN_HandleTypeDef* _hcan, uint8_t _id);
-
-
+    void SetCurrentLimit(float _val);
+    float GetCurrentLimit();
+    void SetMode(uint8_t _mode);
     void SetAngle(float _angle);
-    void SetMaxCurrent(float _val);
-    void SetEnable(bool _enable);
+    void SetRelativePosition(float _angle);
+    void UpdateAngle();
+    void UpdateMode();
+    void UpdateAngleCallback(uint8_t* data);
+    float GetAngle();
+    uint8_t GetMode();
+    void SetTorque(float _current);
+    void EnableCloseLoop();
+    void Save();
 
 
     // Communication protocol definitions
     auto MakeProtocolDefinitions()
     {
         return make_protocol_member_list(
+            make_protocol_ro_property("angle", &currentAngle),
+            make_protocol_function("get_mode", *this, &DummyHand::GetMode),
+            make_protocol_function("get_current_limit", *this, &DummyHand::GetCurrentLimit),
             make_protocol_function("set_angle", *this, &DummyHand::SetAngle, "angle"),
-            make_protocol_function("set_enable", *this, &DummyHand::SetEnable, "enable"),
-            make_protocol_function("set_current_limit", *this, &DummyHand::SetMaxCurrent, "current")
+            make_protocol_function("set_mode", *this, &DummyHand::SetMode, "mode"),
+            make_protocol_function("set_current_limit", *this, &DummyHand::SetCurrentLimit, "current"),
+            make_protocol_function("set_torque", *this, &DummyHand::SetTorque, "current"),
+            make_protocol_function("enable_close_loop", *this, &DummyHand::EnableCloseLoop),
+            make_protocol_function("save", *this, &DummyHand::Save)
         );
     }
 
@@ -48,8 +71,8 @@ private:
     CAN_HandleTypeDef* hcan;
     uint8_t canBuf[8];
     CAN_TxHeaderTypeDef txHeader;
-    float minAngle = 0;
-    float maxAngle = 45;
+    float minAngle = -360;
+    float maxAngle = 360;
 };
 
 
