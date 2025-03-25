@@ -3,6 +3,7 @@ build/
 cmake-build-*/
 Debug/
 Release/
+autogen/
 
 # IDE specific files (CLion/JetBrains)
 .idea/

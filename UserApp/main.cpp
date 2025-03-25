@@ -45,7 +45,7 @@ void ThreadControlLoopFixUpdate(void* argument)
             // Just update Joint states
             dummy.UpdateJointAngles();
             dummy.UpdateJointPose6D();
-            dummy.hand->UpdateAngle();
+            // dummy.hand->UpdateAngle();
             // dummy.UpdateJointVelocities();
             // dummy.UpdateJointCurrents();
         }
@@ -148,6 +148,19 @@ void ThreadRGBUpdate(void* argument) {
     }
 }
 
+osThreadId_t handAngleUpdateHandle;
+void ThreadHandAngleUpdate(void* argument)
+{
+    for (;;)
+    {
+        if (dummy.hand != nullptr)
+        {
+            dummy.hand->UpdateAngle();
+        }
+        osDelay(100); // 10Hz, Update every 100ms, adjust as needed
+    }
+}
+
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
     if(htim->Instance==TIM2)
@@ -203,11 +216,18 @@ void Main(void)
     oledTaskHandle = osThreadNew(ThreadOledUpdate, nullptr, &oledTask_attributes);
 
     const osThreadAttr_t rgbTask_attributes = {
-            .name = "RGBTask",
-            .stack_size = 2000,
-            .priority = (osPriority_t) osPriorityNormal,   // should >= Normal
+        .name = "RGBTask",
+        .stack_size = 2000,
+        .priority = (osPriority_t) osPriorityNormal,   // should >= Normal
     };
     rgbTaskHandle = osThreadNew(ThreadRGBUpdate, nullptr, &rgbTask_attributes);
+
+    const osThreadAttr_t handAngleTask_attributes = {
+        .name = "HandAngleTask",
+        .stack_size = 2000,
+        .priority = (osPriority_t) osPriorityNormal,
+    };
+    handAngleUpdateHandle = osThreadNew(ThreadHandAngleUpdate, nullptr, &handAngleTask_attributes);
 
     // Start Timer Callbacks.
     timerCtrlLoop.SetCallback(OnTimer7Callback);

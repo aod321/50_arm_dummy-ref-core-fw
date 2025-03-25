@@ -39,14 +39,14 @@ void OnUsbAsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel)
         std::string s(_cmd);
         if (s.find("GETJPOS") != std::string::npos)
         {
-            Respond(_responseChannel, "ok %.2f %.2f %.2f %.2f %.2f %.2f",
+            Respond(_responseChannel, "jpos %.2f %.2f %.2f %.2f %.2f %.2f",
                     dummy.currentJoints.a[0], dummy.currentJoints.a[1],
                     dummy.currentJoints.a[2], dummy.currentJoints.a[3],
                     dummy.currentJoints.a[4], dummy.currentJoints.a[5]);
         } else if (s.find("GETLPOS") != std::string::npos)
         {
             dummy.UpdateJointPose6D();
-            Respond(_responseChannel, "ok %.2f %.2f %.2f %.2f %.2f %.2f",
+            Respond(_responseChannel, "lpos %.2f %.2f %.2f %.2f %.2f %.2f",
                     dummy.currentPose6D.X, dummy.currentPose6D.Y,
                     dummy.currentPose6D.Z, dummy.currentPose6D.A,
                     dummy.currentPose6D.B, dummy.currentPose6D.C);
@@ -151,14 +151,14 @@ void OnUart4AsciiCmd(const char* _cmd, size_t _len, StreamSink &_responseChannel
         std::string s(_cmd);
         if (s.find("GETJPOS") != std::string::npos)
         {
-            Respond(_responseChannel, "ok %.2f %.2f %.2f %.2f %.2f %.2f",
+            Respond(_responseChannel, "jpos %.2f %.2f %.2f %.2f %.2f %.2f",
                     dummy.currentJoints.a[0], dummy.currentJoints.a[1],
                     dummy.currentJoints.a[2], dummy.currentJoints.a[3],
                     dummy.currentJoints.a[4], dummy.currentJoints.a[5]);
         } else if (s.find("GETLPOS") != std::string::npos)
         {
             dummy.UpdateJointPose6D();
-            Respond(_responseChannel, "ok %.2f %.2f %.2f %.2f %.2f %.2f",
+            Respond(_responseChannel, "lpos %.2f %.2f %.2f %.2f %.2f %.2f",
                     dummy.currentPose6D.X, dummy.currentPose6D.Y,
                     dummy.currentPose6D.Z, dummy.currentPose6D.A,
                     dummy.currentPose6D.B, dummy.currentPose6D.C);
