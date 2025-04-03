@@ -158,6 +158,97 @@ bool DummyRobot::MoveL(float _x, float _y, float _z, float _a, float _b, float _
     return false;
 }
 
+/**
+ * @brief Move robot to specified position with rotation matrix
+ * @details Uses the first two columns of a rotation matrix (6 values) to specify orientation
+ *          Avoids Euler angle conversion by directly using the rotation matrix for IK
+ * 
+ * @param _x X position in mm
+ * @param _y Y position in mm
+ * @param _z Z position in mm
+ * @param _r11,_r21,_r31 First column of the rotation matrix
+ * @param _r12,_r22,_r32 Second column of the rotation matrix
+ * @return true if motion is valid and started, false otherwise
+ */
+bool DummyRobot::MoveL_Direct(float _x, float _y, float _z, 
+                             float _r11, float _r21, float _r31,
+                             float _r12, float _r22, float _r32)
+{
+    #include "algorithms/kinematic/rotation_utils.hpp"
+    
+    // Create a pose
+    DOF6Kinematic::Pose6D_t pose6D;
+    pose6D.X = _x;
+    pose6D.Y = _y;
+    pose6D.Z = _z;
+    
+    // Create complete rotation matrix from two columns
+    RotationUtils::CreateFromTwoColumns(
+        _r11, _r21, _r31,
+        _r12, _r22, _r32,
+        pose6D.R
+    );
+    
+    // Mark that we're using rotation matrix directly
+    pose6D.hasR = true;
+    
+    // Solve inverse kinematics
+    DOF6Kinematic::IKSolves_t ikSolves{};
+    DOF6Kinematic::Joint6D_t lastJoint6D{};
+    
+    dof6Solver->SolveIK(pose6D, lastJoint6D, ikSolves);
+    
+    // Check for valid solutions
+    bool valid[8];
+    int validCnt = 0;
+
+    for (int i = 0; i < 8; i++)
+    {
+        valid[i] = true;
+
+        for (int j = 1; j <= 6; j++)
+        {
+            if (ikSolves.config[i].a[j - 1] > motorJ[j]->angleLimitMax ||
+                ikSolves.config[i].a[j - 1] < motorJ[j]->angleLimitMin)
+            {
+                valid[i] = false;
+                continue;
+            }
+        }
+
+        if (valid[i]) validCnt++;
+    }
+
+    if (validCnt)
+    {
+        // Find the best configuration (closest to current position)
+        float min = 1000;
+        uint8_t indexConfig = 0, indexJoint = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            if (valid[i])
+            {
+                for (int j = 0; j < 6; j++)
+                    lastJoint6D.a[j] = ikSolves.config[i].a[j];
+                DOF6Kinematic::Joint6D_t tmp = currentJoints - lastJoint6D;
+                float maxAngle = AbsMaxOf6(tmp, indexJoint);
+                if (maxAngle < min)
+                {
+                    min = maxAngle;
+                    indexConfig = i;
+                }
+            }
+        }
+
+        // Move to the best configuration
+        return MoveJ(ikSolves.config[indexConfig].a[0], ikSolves.config[indexConfig].a[1],
+                     ikSolves.config[indexConfig].a[2], ikSolves.config[indexConfig].a[3],
+                     ikSolves.config[indexConfig].a[4], ikSolves.config[indexConfig].a[5]);
+    }
+
+    return false;
+}
+
 void DummyRobot::UpdateJointAngles()
 {
     motorJ[ALL]->UpdateAngle();

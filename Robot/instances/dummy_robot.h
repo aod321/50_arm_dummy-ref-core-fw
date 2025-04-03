@@ -178,6 +178,7 @@ public:
     void Init();
     bool MoveJ(float _j1, float _j2, float _j3, float _j4, float _j5, float _j6);
     bool MoveL(float _x, float _y, float _z, float _a, float _b, float _c);
+    bool MoveL_Direct(float _x, float _y, float _z, float _r11, float _r21, float _r31, float _r12, float _r22, float _r32);
     void MoveJoints(DOF6Kinematic::Joint6D_t _joints);
     void SetJointSpeed(float _speed);
     void SetJointAcceleration(float _acc);
@@ -228,6 +229,10 @@ public:
             make_protocol_function("set_rgb_mode", *this, &DummyRobot::SetRGBMode, "mode"),
             make_protocol_function("move_j", *this, &DummyRobot::MoveJ, "j1", "j2", "j3", "j4", "j5", "j6"),
             make_protocol_function("move_l", *this, &DummyRobot::MoveL, "x", "y", "z", "a", "b", "c"),
+            make_protocol_function("move_l_direct", *this, &DummyRobot::MoveL_Direct, 
+                                  "x", "y", "z", 
+                                  "r11", "r21", "r31", 
+                                  "r12", "r22", "r32"),
             make_protocol_function("set_joint_speed", *this, &DummyRobot::SetJointSpeed, "speed"),
             make_protocol_function("set_joint_acc", *this, &DummyRobot::SetJointAcceleration, "acc"),
             make_protocol_function("set_command_mode", *this, &DummyRobot::SetCommandMode, "mode"),
