@@ -21,12 +21,12 @@ DummyRobot::DummyRobot(CAN_HandleTypeDef* _hcan) :
     hcan(_hcan)
 {
     motorJ[ALL] = new CtrlStepMotor(_hcan, 0, false, 1, -180, 180);
-    motorJ[1] = new CtrlStepMotor(_hcan, 1, true, 30, -170, 170);
-    motorJ[2] = new CtrlStepMotor(_hcan, 2, false, 30, -75, 90);
-    motorJ[3] = new CtrlStepMotor(_hcan, 3, false, 30, 0, 180);
-    motorJ[4] = new CtrlStepMotor(_hcan, 4, true, 30, -180, 180);
-    motorJ[5] = new CtrlStepMotor(_hcan, 5, true, 30, -100, 120);
-    motorJ[6] = new CtrlStepMotor(_hcan, 6, true, 30, -720, 720);
+    motorJ[1] = new CtrlStepMotor(_hcan, 1, true, 50, -170, 170);
+    motorJ[2] = new CtrlStepMotor(_hcan, 2, false, 50, -75, 90);
+    motorJ[3] = new CtrlStepMotor(_hcan, 3, false, 50, 0, 180);
+    motorJ[4] = new CtrlStepMotor(_hcan, 4, true, 50, -180, 180);
+    motorJ[5] = new CtrlStepMotor(_hcan, 5, true, 50, -100, 120);
+    motorJ[6] = new CtrlStepMotor(_hcan, 6, true, 50, -720, 720);
     hand = new DummyHand(_hcan, 0x601);
 
     // dof6Solver = new DOF6Kinematic(0.109f, 0.035f, 0.146f, 0.115f, 0.052f, 0.072f);
